@@ -7,6 +7,8 @@ target_include_directories(blotgl
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
 
+target_link_libraries(blotgl PRIVATE blot_a)
+
 TARGET_COMPILE_DEFINITIONS(blotgl PRIVATE
     FMT_HEADER_ONLY
 )
