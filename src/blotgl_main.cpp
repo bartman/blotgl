@@ -1,18 +1,22 @@
 #define GL_GLEXT_PROTOTYPES
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
+
+extern "C" {
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <gbm.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+};
 
 int main() {
-    const int width = 640;
-    const int height = 480;
+    const int width = 80;
+    const int height = 20;
     const int bytes_per_pixel = 3;  // For 24-bit RGB
 
     // Open DRM render node (may need /dev/dri/card0; adjust if needed)
@@ -154,7 +158,18 @@ int main() {
 
     // Now 'pixels' contains the raw 24-bit RGB data
     // Feed this to your terminal canvas library here.
-    printf("Sample pixels: %02x %02x %02x (should be near red)\n", pixels[(height-1)*width*3], pixels[(height-1)*width*3+1], pixels[(height-1)*width*3+2]);  // Bottom row for comparison
+    for (size_t y=0; y<height; y++) {
+        for (size_t x=0; x<width; x++) {
+            assert(bytes_per_pixel == 3);
+            size_t index = (x + (y*width)) * bytes_per_pixel;
+            uint8_t r = pixels[index];
+            uint8_t g = pixels[index+1];
+            uint8_t b = pixels[index+2];
+
+            printf("%c", (r+g+b) ? '*' : ' ');
+        }
+        puts("");
+    }
 
     // Cleanup GL objects
     glDeleteRenderbuffers(1, &rb);
