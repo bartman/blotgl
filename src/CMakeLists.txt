@@ -19,4 +19,7 @@ TARGET_LINK_LIBRARIES(blotgl PRIVATE
     -lm
     spdlog::spdlog
     fmt::fmt
+    EGL::EGL
+    GBM::GBM
+    OpenGL::GL
 )

@@ -1,7 +1,8 @@
+#define GL_GLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GL/gl.h>
-#include <GL/glext.h>  // For extensions if needed
+#include <GL/glext.h>
 #include <gbm.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -30,9 +31,9 @@ int main() {
     }
 
     // Get EGL display
-    EGLDisplay dpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_MESA, gbm, NULL);
+    EGLDisplay dpy = eglGetPlatformDisplay(EGL_PLATFORM_GBM_KHR, gbm, NULL);
     if (!dpy) {
-        fprintf(stderr, "eglGetPlatformDisplayEXT failed\n");
+        fprintf(stderr, "eglGetPlatformDisplay failed\n");
         gbm_device_destroy(gbm);
         close(fd);
         return 1;
@@ -105,7 +106,7 @@ int main() {
     }
 
     // Allocate buffer for raw pixel data (top-to-bottom)
-    unsigned char *pixels = malloc(width * height * bytes_per_pixel);
+    unsigned char *pixels = (unsigned char *)malloc(width * height * bytes_per_pixel);
     if (!pixels) {
         fprintf(stderr, "Failed to allocate pixel buffer\n");
         eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);

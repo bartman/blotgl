@@ -21,6 +21,9 @@ endfunction()
 # this uses system libraries, preferably via pkg-config
 my_find_package(GTest GTest::gtest)
 my_find_package(libpci Pci::Pci)
+my_find_package(EGL EGL::EGL)
+my_find_package(GBM GBM::GBM)
+my_find_package(OpenGL OpenGL::GL)
 find_package(Threads REQUIRED)
 
 # this downloads source and builds it
