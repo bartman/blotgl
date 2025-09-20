@@ -41,7 +41,12 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     GIT_TAG 11.2.0
 )
+FetchContent_Declare(
+    blot
+    GIT_REPOSITORY https://github.com/bartman/blot.git
+    #GIT_TAG 11.2.0
+)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON) # Add this line
 
-FetchContent_MakeAvailable(spdlog clipp fmt)
+FetchContent_MakeAvailable(spdlog clipp fmt blot)
