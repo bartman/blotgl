@@ -1,61 +1,171 @@
-#include <GL/osmesa.h>  // OSMesa headers
-#include <GL/gl.h>     // Standard OpenGL headers
-#include <stdio.h>     // For printf
-#include <stdlib.h>    // For malloc/exit
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GL/gl.h>
+#include <GL/glext.h>  // For extensions if needed
+#include <gbm.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 int main() {
     const int width = 640;
     const int height = 480;
     const int bytes_per_pixel = 3;  // For 24-bit RGB
 
-    // Allocate buffer for raw pixel data (row-major, bottom-to-top)
+    // Open DRM render node (may need /dev/dri/card0; adjust if needed)
+    int fd = open("/dev/dri/renderD128", O_RDWR);
+    if (fd < 0) {
+        fprintf(stderr, "Failed to open render node (check permissions)\n");
+        return 1;
+    }
+
+    // Create GBM device
+    struct gbm_device *gbm = gbm_create_device(fd);
+    if (!gbm) {
+        fprintf(stderr, "gbm_create_device failed\n");
+        close(fd);
+        return 1;
+    }
+
+    // Get EGL display
+    EGLDisplay dpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_MESA, gbm, NULL);
+    if (!dpy) {
+        fprintf(stderr, "eglGetPlatformDisplayEXT failed\n");
+        gbm_device_destroy(gbm);
+        close(fd);
+        return 1;
+    }
+
+    if (!eglInitialize(dpy, NULL, NULL)) {
+        fprintf(stderr, "eglInitialize failed\n");
+        gbm_device_destroy(gbm);
+        close(fd);
+        return 1;
+    }
+
+    // Check required extensions
+    const char *exts = eglQueryString(dpy, EGL_EXTENSIONS);
+    if (!strstr(exts, "EGL_KHR_surfaceless_context")) {
+        fprintf(stderr, "EGL_KHR_surfaceless_context not supported\n");
+        eglTerminate(dpy);
+        gbm_device_destroy(gbm);
+        close(fd);
+        return 1;
+    }
+
+    // Choose config
+    static const EGLint config_attribs[] = {
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+        EGL_NONE
+    };
+    EGLConfig config;
+    EGLint num_configs;
+    if (!eglChooseConfig(dpy, config_attribs, &config, 1, &num_configs) || num_configs == 0) {
+        fprintf(stderr, "eglChooseConfig failed\n");
+        eglTerminate(dpy);
+        gbm_device_destroy(gbm);
+        close(fd);
+        return 1;
+    }
+
+    // Bind OpenGL API
+    if (!eglBindAPI(EGL_OPENGL_API)) {
+        fprintf(stderr, "eglBindAPI failed\n");
+        eglTerminate(dpy);
+        gbm_device_destroy(gbm);
+        close(fd);
+        return 1;
+    }
+
+    // Create context (OpenGL 3.3 core; adjust version as needed)
+    static const EGLint ctx_attribs[] = {
+        EGL_CONTEXT_MAJOR_VERSION, 3,
+        EGL_CONTEXT_MINOR_VERSION, 3,
+        EGL_NONE
+    };
+    EGLContext ctx = eglCreateContext(dpy, config, EGL_NO_CONTEXT, ctx_attribs);
+    if (!ctx) {
+        fprintf(stderr, "eglCreateContext failed\n");
+        eglTerminate(dpy);
+        gbm_device_destroy(gbm);
+        close(fd);
+        return 1;
+    }
+
+    // Make surfaceless context current
+    if (!eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, ctx)) {
+        fprintf(stderr, "eglMakeCurrent failed\n");
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        gbm_device_destroy(gbm);
+        close(fd);
+        return 1;
+    }
+
+    // Allocate buffer for raw pixel data (top-to-bottom)
     unsigned char *pixels = malloc(width * height * bytes_per_pixel);
     if (!pixels) {
         fprintf(stderr, "Failed to allocate pixel buffer\n");
+        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroyContext(dpy, ctx);
+        eglTerminate(dpy);
+        gbm_device_destroy(gbm);
+        close(fd);
         return 1;
     }
 
-    // Create OSMesa context (use OSMESA_RGB for 24-bit; OSMESA_RGB_565 for 16-bit)
-    OSMesaContext ctx = OSMesaCreateContext(OSMESA_RGB, NULL);
-    if (!ctx) {
-        fprintf(stderr, "OSMesaCreateContext failed\n");
-        free(pixels);
+    // Create FBO and renderbuffer for offscreen rendering
+    GLuint fbo, rb;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glGenRenderbuffers(1, &rb);
+    glBindRenderbuffer(GL_RENDERBUFFER, rb);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, width, height);  // 24-bit RGB
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rb);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        fprintf(stderr, "Framebuffer incomplete\n");
+        // Cleanup...
         return 1;
     }
 
-    // Bind the buffer to the context
-    if (!OSMesaMakeCurrent(ctx, pixels, GL_UNSIGNED_BYTE, width, height)) {
-        fprintf(stderr, "OSMesaMakeCurrent failed\n");
-        OSMesaDestroyContext(ctx);
-        free(pixels);
-        return 1;
-    }
-
-    // Set up viewport and clear color
+    // Set up viewport and clear
     glViewport(0, 0, width, height);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);  // Black background
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Simple rendering: draw a colored triangle
+    // Simple rendering: draw a colored triangle (use shaders for modern GL)
     glBegin(GL_TRIANGLES);
-    glColor3f(1.0f, 0.0f, 0.0f);  // Red
+    glColor3f(1.0f, 0.0f, 0.0f);
     glVertex2f(-0.5f, -0.5f);
-    glColor3f(0.0f, 1.0f, 0.0f);  // Green
+    glColor3f(0.0f, 1.0f, 0.0f);
     glVertex2f(0.5f, -0.5f);
-    glColor3f(0.0f, 0.0f, 1.0f);  // Blue
+    glColor3f(0.0f, 0.0f, 1.0f);
     glVertex2f(0.0f, 0.5f);
     glEnd();
 
-    // Finish rendering
+    // Finish and read pixels
     glFinish();
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);  // For 24-bit; use GL_UNSIGNED_SHORT_5_6_5 for 16-bit
 
-    // Now 'pixels' contains the raw 24-bit RGB data (bottom-to-top rows)
+    // Now 'pixels' contains the raw 24-bit RGB data
     // Feed this to your terminal canvas library here.
-    // For demo, print the first few bytes (red pixel should be near bottom-left)
-    printf("Sample pixels: %02x %02x %02x (should be near red)\n", pixels[0], pixels[1], pixels[2]);
+    printf("Sample pixels: %02x %02x %02x (should be near red)\n", pixels[(height-1)*width*3], pixels[(height-1)*width*3+1], pixels[(height-1)*width*3+2]);  // Bottom row for comparison
 
-    // Cleanup
-    OSMesaDestroyContext(ctx);
+    // Cleanup GL objects
+    glDeleteRenderbuffers(1, &rb);
+    glDeleteFramebuffers(1, &fbo);
+
+    // EGL cleanup
+    eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroyContext(dpy, ctx);
+    eglTerminate(dpy);
+    gbm_device_destroy(gbm);
+    close(fd);
     free(pixels);
+
     return 0;
 }
