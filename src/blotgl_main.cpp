@@ -142,15 +142,75 @@ int main() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Simple rendering: draw a colored triangle (use shaders for modern GL)
-    glBegin(GL_TRIANGLES);
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glVertex2f(-0.5f, -0.5f);
-    glColor3f(0.0f, 1.0f, 0.0f);
-    glVertex2f(0.5f, -0.5f);
-    glColor3f(0.0f, 0.0f, 1.0f);
-    glVertex2f(0.0f, 0.5f);
-    glEnd();
+    // Simple rendering: draw a colored triangle using modern shaders
+    const char *vertexShaderSource = R"glsl(
+        #version 330 core
+        layout (location = 0) in vec2 aPos;
+        layout (location = 1) in vec3 aColor;
+        out vec3 fragColor;
+        void main() {
+            gl_Position = vec4(aPos, 0.0, 1.0);
+            fragColor = aColor;
+        }
+    )glsl";
+
+    const char *fragmentShaderSource = R"glsl(
+        #version 330 core
+        in vec3 fragColor;
+        out vec4 FragColor;
+        void main() {
+            FragColor = vec4(fragColor, 1.0);
+        }
+    )glsl";
+
+    // Compile vertex shader
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    // Compile fragment shader
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+
+    // Link shaders into program
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    glUseProgram(shaderProgram);
+
+    // Define triangle vertices and colors
+    float vertices[] = {
+        -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,  // Red
+         0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // Green
+         0.0f,  0.5f, 0.0f, 0.0f, 1.0f   // Blue
+    };
+
+    GLuint VBO, VAO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Position attribute
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // Color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // Draw the triangle
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    // Cleanup shaders and buffers
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteProgram(shaderProgram);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
 
     // Finish and read pixels
     glFinish();
