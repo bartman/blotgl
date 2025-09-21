@@ -17,8 +17,7 @@ TARGET_INCLUDE_DIRECTORIES(blotgl PRIVATE
 
 TARGET_LINK_LIBRARIES(blotgl PRIVATE
     -lm
-    blot_a
-    spdlog::spdlog
+    #spdlog::spdlog
     fmt::fmt
     EGL::EGL
     GBM::GBM

@@ -17,12 +17,9 @@ extern "C" {
 #include <unistd.h>
 };
 
-#include "blot.hpp"
-#include "blot_canvas.h"
-
 int main() {
-    const int width = 80;
-    const int height = 40;
+    const int width = 200;
+    const int height = 100;
     const int bytes_per_pixel = 3;  // For 24-bit RGB
 
     // Open DRM render node (may need /dev/dri/card0; adjust if needed)
