@@ -1,6 +1,3 @@
-// filepath: src/blotgl_main.cpp
-// ...existing code... (replace entire file content with the following refactored version)
-
 #define GL_GLEXT_PROTOTYPES
 #include <cstdio>
 #include <cstdlib>
@@ -26,21 +23,26 @@ extern "C" {
 #include "blotgl_braille.hpp"
 #include "blotgl_color.hpp"
 
-class App {
+class App final {
 private:
-    int m_width = 200;
-    int m_height = 100;
+    unsigned m_width;
+    unsigned m_height;
     BlotGL::Frame<3> m_frame;
-    int m_fd;
-    struct gbm_device *m_gbm;
-    EGLDisplay m_dpy;
-    EGLContext m_ctx;
-    GLuint m_fbo;
-    GLuint m_rb;
+    int m_fd{-1};
+    struct gbm_device *m_gbm{nullptr};
+    EGLDisplay m_dpy{EGL_NO_DISPLAY};
+    EGLContext m_ctx{EGL_NO_CONTEXT};
+    GLuint m_fbo{0};
+    GLuint m_rb{0};
+
+    App(const App&) = delete;
+    App(App&&) = delete;
+    App& operator=(const App&) = delete;
+    App& operator=(App&&) = delete;
 
 public:
-    App()
-        : m_frame(m_width, m_height), m_fd(-1), m_gbm(nullptr), m_dpy(EGL_NO_DISPLAY), m_ctx(EGL_NO_CONTEXT), m_fbo(0), m_rb(0) {
+    explicit App(unsigned width, unsigned height)
+        : m_width{width}, m_height{height}, m_frame{width, height} {
         m_fd = open("/dev/dri/renderD128", O_RDWR);
         if (m_fd < 0) {
             fprintf(stderr, "Failed to open render node (check permissions)\n");
@@ -232,7 +234,7 @@ public:
 };
 
 int main() {
-    App app;
+    App app(200, 100);
     app.frame();
     return 0;
 }
