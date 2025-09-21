@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+#include <compare>
+#include <fmt/core.h>
+#include <fmt/ostream.h>
 
 extern "C" {
 #include <EGL/egl.h>
@@ -19,7 +22,7 @@ extern "C" {
 
 int main() {
     const int width = 80;
-    const int height = 20;
+    const int height = 40;
     const int bytes_per_pixel = 3;  // For 24-bit RGB
 
     // Open DRM render node (may need /dev/dri/card0; adjust if needed)
@@ -219,38 +222,115 @@ int main() {
     glFinish();
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);  // For 24-bit; use GL_UNSIGNED_SHORT_5_6_5 for 16-bit
 
+    // ------------------------------------------------------------------------
 
-    GError *error = nullptr;
-    blot_render_flags flags = BLOT_RENDER_BRAILLE;
-    blot_canvas *canvas = blot_canvas_new(height, width, flags, 0, &error);
+#define BRAILLE_GLYPH_BASE 0x2800
 
-    blot_dimensions dim = {};
-    blot_margins *mrg = {};
-    blot_screen *screen = blot_screen_new(&dim, &mrg, flags, &error);
+#define BRAILLE_GLYPH_ROWS 4
+#define BRAILLE_GLYPH_COLS 2
+#define BRAILLE_GLYPH_SIZE (BRAILLE_GLYPH_ROWS * BRAILLE_GLYPH_COLS)
 
-    // Now 'pixels' contains the raw 24-bit RGB data
-    // Feed this to your terminal canvas library here.
+#define BRAILLE_GLYPH_MAP_INDEX(x,y) ( ( (y) * BRAILLE_GLYPH_COLS) + (x) )
+
+    #define DIV_ROUND_UP(n,by) (((n) + (by-1)) / (by))
+
+    //   +------+------+
+    //   | 0x01 | 0x08 |
+    //   +------+------+
+    //   | 0x02 | 0x10 |
+    //   +------+------+
+    //   | 0x04 | 0x20 |
+    //   +------+------+
+    //   | 0x40 | 0x80 |
+    //   +------+------+
+
+    std::array<uint8_t,BRAILLE_GLYPH_SIZE> b_mask = {
+        0x01, 0x08,
+        0x02, 0x10,
+        0x04, 0x20,
+        0x40, 0x80,
+    };
+
+    size_t b_cols = DIV_ROUND_UP(width, BRAILLE_GLYPH_COLS);
+    size_t b_rows = DIV_ROUND_UP(height, BRAILLE_GLYPH_ROWS);
+    size_t b_size = b_cols * b_rows;
+    std::vector<uint8_t> braille(b_size, 0);
+
+    struct color24 {
+        uint8_t r{}, g{}, b{};
+
+        operator bool() const { return (r|g|b) != 0; }
+        auto operator<=>(const color24&) const = default;
+    };
+    std::vector<color24> colors(b_size, color24{});
+
     for (size_t y=0; y<height; y++) {
         for (size_t x=0; x<width; x++) {
-            assert(bytes_per_pixel == 3);
-            size_t index = (x + (y*width)) * bytes_per_pixel;
-            uint8_t r = pixels[index];
-            uint8_t g = pixels[index+1];
-            uint8_t b = pixels[index+2];
+            static_assert(bytes_per_pixel == 3);
+            size_t pindex = (x + (y*width)) * bytes_per_pixel;
+            color24 color{ pixels[pindex], pixels[pindex+1], pixels[pindex+2] };
 
-            if (r+g+b) {
-                blot_canvas_set(canvas, x, y, 1);
+            if (color) {
+                size_t b_buf_index = (x/BRAILLE_GLYPH_COLS) + ((y/BRAILLE_GLYPH_ROWS)*b_cols);
+                size_t b_sub_index = (x%BRAILLE_GLYPH_COLS) + ((y%BRAILLE_GLYPH_ROWS)*BRAILLE_GLYPH_COLS);
+
+                assert(b_buf_index < b_size);
+                assert(b_sub_index < BRAILLE_GLYPH_SIZE);
+
+                braille[b_buf_index] |= b_mask[b_sub_index];
+                colors[b_buf_index] = color;
             }
         }
     }
 
-    blot_xy_limits xylim = {};
+    auto print_unicode_char = [](std::ostream &out, char32_t codepoint) {
+        if (codepoint <= 0x7F) {
+            out << char(codepoint);
+        } else if (codepoint <= 0x7FF) {
+            out << char(0xC0 | ((codepoint >> 6) & 0x1F))
+                << char(0x80 | (codepoint & 0x3F));
+        } else if (codepoint <= 0xFFFF) {
+            out << char(0xE0 | ((codepoint >> 12) & 0x0F))
+                << char(0x80 | ((codepoint >> 6) & 0x3F))
+                << char(0x80 | (codepoint & 0x3F));
+        } else if (codepoint <= 0x10FFFF) {
+            out << char(0xF0 | ((codepoint >> 18) & 0x07))
+                << char(0x80 | ((codepoint >> 12) & 0x3F))
+                << char(0x80 | ((codepoint >> 6) & 0x3F))
+                << char(0x80 | (codepoint & 0x3F));
+        }
+    };
 
-    blot_screen_render(screen, xylim,
+    auto print_color_code = [](std::ostream &out, color24 color) {
+        out << std::format("\033[38;2;{};{};{}m", color.r, color.g, color.b);
+    };
 
+    std::stringstream ss;
+    for (size_t row=0; row<b_rows; row++) {
+        color24 color{};
+        for (size_t col=0; col<b_cols; col++) {
+            size_t b_buf_index = col + (row*b_cols);
 
-    blot_canvas_delete(canvas);
-    blot_screen_delete(screen);
+            uint8_t b_glyph = braille[b_buf_index];
+            if (!b_glyph) {
+                ss << ' ';
+                continue;
+            }
+
+            if (color != colors[b_buf_index]) {
+                color = colors[b_buf_index];
+                print_color_code(ss, color);
+            }
+            print_unicode_char(ss, BRAILLE_GLYPH_BASE + b_glyph);
+        }
+        if (color)
+            ss << "\033[0m";
+
+        ss << '\n';
+    }
+    std::puts(ss.str().c_str());
+
+    // ------------------------------------------------------------------------
 
     // Cleanup GL objects
     glDeleteRenderbuffers(1, &rb);
