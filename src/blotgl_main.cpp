@@ -17,6 +17,10 @@ extern "C" {
 #include <unistd.h>
 };
 
+#include "blotgl_frame.hpp"
+#include "blotgl_braille.hpp"
+#include "blotgl_color.hpp"
+
 int main() {
     const int width = 200;
     const int height = 100;
@@ -221,44 +225,11 @@ int main() {
 
     // ------------------------------------------------------------------------
 
-#define BRAILLE_GLYPH_BASE 0x2800
-
-#define BRAILLE_GLYPH_ROWS 4
-#define BRAILLE_GLYPH_COLS 2
-#define BRAILLE_GLYPH_SIZE (BRAILLE_GLYPH_ROWS * BRAILLE_GLYPH_COLS)
-
-#define BRAILLE_GLYPH_MAP_INDEX(x,y) ( ( (y) * BRAILLE_GLYPH_COLS) + (x) )
-
-    #define DIV_ROUND_UP(n,by) (((n) + (by-1)) / (by))
-
-    //   +------+------+
-    //   | 0x01 | 0x08 |
-    //   +------+------+
-    //   | 0x02 | 0x10 |
-    //   +------+------+
-    //   | 0x04 | 0x20 |
-    //   +------+------+
-    //   | 0x40 | 0x80 |
-    //   +------+------+
-
-    std::array<uint8_t,BRAILLE_GLYPH_SIZE> b_mask = {
-        0x01, 0x08,
-        0x02, 0x10,
-        0x04, 0x20,
-        0x40, 0x80,
-    };
-
-    size_t b_cols = DIV_ROUND_UP(width, BRAILLE_GLYPH_COLS);
-    size_t b_rows = DIV_ROUND_UP(height, BRAILLE_GLYPH_ROWS);
+    size_t b_cols = BlotGL::div_round_up(width, BlotGL::BRAILLE_GLYPH_COLS);
+    size_t b_rows = BlotGL::div_round_up(height, BlotGL::BRAILLE_GLYPH_ROWS);
     size_t b_size = b_cols * b_rows;
     std::vector<uint8_t> braille(b_size, 0);
 
-    struct color24 {
-        uint8_t r{}, g{}, b{};
-
-        operator bool() const { return (r|g|b) != 0; }
-        auto operator<=>(const color24&) const = default;
-    };
     std::vector<color24> colors(b_size, color24{});
 
     for (size_t y=0; y<height; y++) {
@@ -268,13 +239,13 @@ int main() {
             color24 color{ pixels[pindex], pixels[pindex+1], pixels[pindex+2] };
 
             if (color) {
-                size_t b_buf_index = (x/BRAILLE_GLYPH_COLS) + ((y/BRAILLE_GLYPH_ROWS)*b_cols);
-                size_t b_sub_index = (x%BRAILLE_GLYPH_COLS) + ((y%BRAILLE_GLYPH_ROWS)*BRAILLE_GLYPH_COLS);
+                size_t b_buf_index = (x/BlotGL::BRAILLE_GLYPH_COLS) + ((y/BlotGL::BRAILLE_GLYPH_ROWS)*b_cols);
+                size_t b_sub_index = (x%BlotGL::BRAILLE_GLYPH_COLS) + ((y%BlotGL::BRAILLE_GLYPH_ROWS)*BlotGL::BRAILLE_GLYPH_COLS);
 
                 assert(b_buf_index < b_size);
-                assert(b_sub_index < BRAILLE_GLYPH_SIZE);
+                assert(b_sub_index < BlotGL::BRAILLE_GLYPH_SIZE);
 
-                braille[b_buf_index] |= b_mask[b_sub_index];
+                braille[b_buf_index] |= BlotGL::braille_mapping[b_sub_index];
                 colors[b_buf_index] = color;
             }
         }
@@ -318,7 +289,7 @@ int main() {
                 color = colors[b_buf_index];
                 print_color_code(ss, color);
             }
-            print_unicode_char(ss, BRAILLE_GLYPH_BASE + b_glyph);
+            print_unicode_char(ss, BlotGL::BRAILLE_GLYPH_BASE + b_glyph);
         }
         if (color)
             ss << "\033[0m";
