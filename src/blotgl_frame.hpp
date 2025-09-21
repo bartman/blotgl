@@ -31,7 +31,7 @@ public:
         size_t index = pixel_index(x, y);
         return pixels() + index;
     }
-    color24 pixel_color(Size x, Size y) const {
+    color24 pixel_color(Size x, Size y) {
         const uint8_t *rgb = pixel_ptr(x, y);
         return { rgb[0], rgb[1], rgb[2] };
     }
@@ -80,7 +80,7 @@ public:
         }
     }
 
-    std::ostream & braille_to_stream(std::ostream &out) const {
+    std::ostream & braille_to_stream(std::ostream &out) {
         for (size_t y=0; y<braille_height(); y++) {
             color24 prev_color{};
             for (size_t x=0; x<braille_width(); x++) {
@@ -117,13 +117,19 @@ protected:
         return width * height * BPP;
     }
     constexpr size_t pixel_index(size_t x, size_t y) {
+        assert (x < pixel_width());
+        assert (y < pixel_height());
         return x + (y * pixel_width());
     }
     constexpr size_t braille_index(size_t x, size_t y) {
+        assert (x < braille_width());
+        assert (y < braille_height());
         return x + (y * braille_width());
     }
     static constexpr uint8_t braille_glyph_at(uint8_t x, uint8_t y) {
-        size_t index = x + (y*BlotGL::BRAILLE_GLYPH_COLS);
+        assert (x < BRAILLE_GLYPH_COLS);
+        assert (y < BRAILLE_GLYPH_ROWS);
+        size_t index = x + (y*BRAILLE_GLYPH_COLS);
         return BlotGL::braille_mapping[index];
     }
     static constexpr void gen_unicode(std::ostream &out, char32_t codepoint) {

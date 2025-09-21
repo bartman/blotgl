@@ -26,6 +26,8 @@ int main() {
     const int height = 100;
     const int bytes_per_pixel = 3;  // For 24-bit RGB
 
+    BlotGL::Frame frame(width, height);
+
     // Open DRM render node (may need /dev/dri/card0; adjust if needed)
     int fd = open("/dev/dri/renderD128", O_RDWR);
     if (fd < 0) {
@@ -109,18 +111,6 @@ int main() {
     // Make surfaceless context current
     if (!eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, ctx)) {
         fprintf(stderr, "eglMakeCurrent failed\n");
-        eglDestroyContext(dpy, ctx);
-        eglTerminate(dpy);
-        gbm_device_destroy(gbm);
-        close(fd);
-        return 1;
-    }
-
-    // Allocate buffer for raw pixel data (top-to-bottom)
-    unsigned char *pixels = (unsigned char *)malloc(width * height * bytes_per_pixel);
-    if (!pixels) {
-        fprintf(stderr, "Failed to allocate pixel buffer\n");
-        eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
         eglDestroyContext(dpy, ctx);
         eglTerminate(dpy);
         gbm_device_destroy(gbm);
@@ -221,81 +211,13 @@ int main() {
 
     // Finish and read pixels
     glFinish();
-    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);  // For 24-bit; use GL_UNSIGNED_SHORT_5_6_5 for 16-bit
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, frame.pixels());  // For 24-bit; use GL_UNSIGNED_SHORT_5_6_5 for 16-bit
 
     // ------------------------------------------------------------------------
 
-    size_t b_cols = BlotGL::div_round_up(width, BlotGL::BRAILLE_GLYPH_COLS);
-    size_t b_rows = BlotGL::div_round_up(height, BlotGL::BRAILLE_GLYPH_ROWS);
-    size_t b_size = b_cols * b_rows;
-    std::vector<uint8_t> braille(b_size, 0);
-
-    std::vector<color24> colors(b_size, color24{});
-
-    for (size_t y=0; y<height; y++) {
-        for (size_t x=0; x<width; x++) {
-            static_assert(bytes_per_pixel == 3);
-            size_t pindex = (x + (y*width)) * bytes_per_pixel;
-            color24 color{ pixels[pindex], pixels[pindex+1], pixels[pindex+2] };
-
-            if (color) {
-                size_t b_buf_index = (x/BlotGL::BRAILLE_GLYPH_COLS) + ((y/BlotGL::BRAILLE_GLYPH_ROWS)*b_cols);
-                size_t b_sub_index = (x%BlotGL::BRAILLE_GLYPH_COLS) + ((y%BlotGL::BRAILLE_GLYPH_ROWS)*BlotGL::BRAILLE_GLYPH_COLS);
-
-                assert(b_buf_index < b_size);
-                assert(b_sub_index < BlotGL::BRAILLE_GLYPH_SIZE);
-
-                braille[b_buf_index] |= BlotGL::braille_mapping[b_sub_index];
-                colors[b_buf_index] = color;
-            }
-        }
-    }
-
-    auto print_unicode_char = [](std::ostream &out, char32_t codepoint) {
-        if (codepoint <= 0x7F) {
-            out << char(codepoint);
-        } else if (codepoint <= 0x7FF) {
-            out << char(0xC0 | ((codepoint >> 6) & 0x1F))
-                << char(0x80 | (codepoint & 0x3F));
-        } else if (codepoint <= 0xFFFF) {
-            out << char(0xE0 | ((codepoint >> 12) & 0x0F))
-                << char(0x80 | ((codepoint >> 6) & 0x3F))
-                << char(0x80 | (codepoint & 0x3F));
-        } else if (codepoint <= 0x10FFFF) {
-            out << char(0xF0 | ((codepoint >> 18) & 0x07))
-                << char(0x80 | ((codepoint >> 12) & 0x3F))
-                << char(0x80 | ((codepoint >> 6) & 0x3F))
-                << char(0x80 | (codepoint & 0x3F));
-        }
-    };
-
-    auto print_color_code = [](std::ostream &out, color24 color) {
-        out << std::format("\033[38;2;{};{};{}m", color.r, color.g, color.b);
-    };
-
+    frame.pixels_to_braille();
     std::stringstream ss;
-    for (size_t row=0; row<b_rows; row++) {
-        color24 color{};
-        for (size_t col=0; col<b_cols; col++) {
-            size_t b_buf_index = col + (row*b_cols);
-
-            uint8_t b_glyph = braille[b_buf_index];
-            if (!b_glyph) {
-                ss << ' ';
-                continue;
-            }
-
-            if (color != colors[b_buf_index]) {
-                color = colors[b_buf_index];
-                print_color_code(ss, color);
-            }
-            print_unicode_char(ss, BlotGL::BRAILLE_GLYPH_BASE + b_glyph);
-        }
-        if (color)
-            ss << "\033[0m";
-
-        ss << '\n';
-    }
+    frame.braille_to_stream(ss);
     std::puts(ss.str().c_str());
 
     // ------------------------------------------------------------------------
@@ -310,7 +232,6 @@ int main() {
     eglTerminate(dpy);
     gbm_device_destroy(gbm);
     close(fd);
-    free(pixels);
 
     return 0;
 }
