@@ -14,8 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Enable generation of compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-
-project(blot_gl_test LANGUAGES CXX)
+project(blot_gl_test VERSION 0.0.0 LANGUAGES C CXX)
 
 include(GetGitRevisionDescription)
 git_describe(GIT_REVISION --tags --dirty=-dirty)
