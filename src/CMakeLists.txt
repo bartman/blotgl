@@ -7,8 +7,6 @@ target_include_directories(blotgl
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
 
-target_link_libraries(blotgl PRIVATE blot_a)
-
 TARGET_COMPILE_DEFINITIONS(blotgl PRIVATE
     FMT_HEADER_ONLY
 )
@@ -19,6 +17,7 @@ TARGET_INCLUDE_DIRECTORIES(blotgl PRIVATE
 
 TARGET_LINK_LIBRARIES(blotgl PRIVATE
     -lm
+    blot_a
     spdlog::spdlog
     fmt::fmt
     EGL::EGL
