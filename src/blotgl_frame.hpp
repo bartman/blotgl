@@ -29,7 +29,7 @@ public:
     uint8_t* pixels() { return m_pixels.data(); }
     uint8_t* pixel_ptr(Size x, Size y) {
         size_t index = pixel_index(x, y);
-        return pixels() + index;
+        return pixels() + (index * BPP);
     }
     color24 pixel_color(Size x, Size y) {
         const uint8_t *rgb = pixel_ptr(x, y);
@@ -57,8 +57,8 @@ public:
 
     // convert pixel buffer to braille/colors
     void pixels_to_braille() {
-        for (size_t y=0; y<m_height; y++) {
-            for (size_t x=0; x<m_width; x++) {
+        for (size_t y=0; y<pixel_height(); y++) {
+            for (size_t x=0; x<pixel_width(); x++) {
                 color24 pix = pixel_color(x,y);
                 if (!pix)
                     continue;
