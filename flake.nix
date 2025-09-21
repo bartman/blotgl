@@ -18,6 +18,7 @@
         pkgs.gtest
         pkgs.mesa
         pkgs.libglvnd
+        pkgs.glib.dev
 
         # Development tools
         pkgs.neovim
