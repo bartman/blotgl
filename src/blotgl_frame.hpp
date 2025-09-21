@@ -13,7 +13,7 @@ public:
 
     Frame(Size width, Size height)
     : m_width(width), m_height(height),
-      m_pixels(pixel_size(), 0),
+      m_pixels(pixel_size() * BPP, 0),
       m_braille(braille_size(), 0),
       m_colors(braille_size(), color24{})
     {
