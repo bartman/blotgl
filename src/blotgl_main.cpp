@@ -14,6 +14,9 @@ extern "C" {
 #include <unistd.h>
 };
 
+#include "blot.hpp"
+#include "blot_canvas.h"
+
 int main() {
     const int width = 80;
     const int height = 20;
@@ -216,6 +219,15 @@ int main() {
     glFinish();
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);  // For 24-bit; use GL_UNSIGNED_SHORT_5_6_5 for 16-bit
 
+
+    GError *error = nullptr;
+    blot_render_flags flags = BLOT_RENDER_BRAILLE;
+    blot_canvas *canvas = blot_canvas_new(height, width, flags, 0, &error);
+
+    blot_dimensions dim = {};
+    blot_margins *mrg = {};
+    blot_screen *screen = blot_screen_new(&dim, &mrg, flags, &error);
+
     // Now 'pixels' contains the raw 24-bit RGB data
     // Feed this to your terminal canvas library here.
     for (size_t y=0; y<height; y++) {
@@ -226,10 +238,19 @@ int main() {
             uint8_t g = pixels[index+1];
             uint8_t b = pixels[index+2];
 
-            printf("%c", (r+g+b) ? '*' : ' ');
+            if (r+g+b) {
+                blot_canvas_set(canvas, x, y, 1);
+            }
         }
-        puts("");
     }
+
+    blot_xy_limits xylim = {};
+
+    blot_screen_render(screen, xylim,
+
+
+    blot_canvas_delete(canvas);
+    blot_screen_delete(screen);
 
     // Cleanup GL objects
     glDeleteRenderbuffers(1, &rb);
