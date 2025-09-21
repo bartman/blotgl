@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Specify the C++ compiler to be Clang
 set(CMAKE_CXX_COMPILER "clang++")
 set(CMAKE_C_COMPILER "clang")
-include(PickCompiler)
+#include(PickCompiler)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
