@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <compare>
 
 struct color24 {
     uint8_t r{}, g{}, b{};
