@@ -9,12 +9,17 @@
     devShells.x86_64-linux.default = pkgs.mkShell {
       buildInputs = [
         # Build tools
+        pkgs.gcc
         pkgs.clang
         pkgs.cmake
         pkgs.gnumake
         pkgs.pkg-config
 
         # Libraries
+        pkgs.libcxx
+        pkgs.libcxx.dev
+        pkgs.libgcc
+        pkgs.libgcc.lib
         pkgs.gtest
         pkgs.mesa
         pkgs.libglvnd
