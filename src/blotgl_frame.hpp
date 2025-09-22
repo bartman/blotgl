@@ -1,4 +1,10 @@
 #pragma once
+#include <cassert>
+#include <ostream>
+#include <vector>
+#include <cstdint>
+#include <fmt/core.h>
+#include <fmt/ostream.h>
 
 #include "blotgl_braille.hpp"
 #include "blotgl_utils.hpp"
