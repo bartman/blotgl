@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+#include <cmath>
 #include <fmt/core.h>
 #include <fmt/ostream.h>
 #include <sstream>
@@ -80,11 +81,23 @@ public:
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        static float degrees = 0;
+
         float vertices[] = {
             -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,  // Red
              0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // Green
              0.0f,  0.5f, 0.0f, 0.0f, 1.0f   // Blue
         };
+
+        float radians = degrees * static_cast<float>(M_PI) / 180.0f;
+        for (int v = 0; v < 3; ++v) {
+            int i = 5*v;
+            float new_x = vertices[i+0] * cosf(radians) - vertices[i+1] * sinf(radians);
+            float new_y = vertices[i+0] * sinf(radians) + vertices[i+1] * cosf(radians);
+            vertices[i+0] = new_x;
+            vertices[i+1] = new_y;
+        }
+        degrees += 1;
 
         GLuint VBO, VAO;
         glGenVertexArrays(1, &VAO);
