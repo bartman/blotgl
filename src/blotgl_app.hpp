@@ -25,18 +25,7 @@ class App : public Core::App {
 protected:
     BlotGL::Frame<3> m_frame;
 
-public:
-
-    explicit App(unsigned width, unsigned height)
-    : Core::App(width, height), m_frame{width, height}
-    {}
-
-    void frame() {
-        glViewport(0, 0, m_width, m_height);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        const char *vertexShaderSource = R"glsl(
+        static constexpr const char *vertexShaderSource = R"glsl(
             #version 330 core
             layout (location = 0) in vec2 aPos;
             layout (location = 1) in vec3 aColor;
@@ -47,7 +36,7 @@ public:
             }
         )glsl";
 
-        const char *fragmentShaderSource = R"glsl(
+        static constexpr const char *fragmentShaderSource = R"glsl(
             #version 330 core
             in vec3 fragColor;
             out vec4 FragColor;
@@ -55,20 +44,41 @@ public:
                 FragColor = vec4(fragColor, 1.0);
             }
         )glsl";
+        GLuint fragmentShader;
+        GLuint vertexShader;
+        GLuint shaderProgram;
 
-        GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+public:
+
+    explicit App(unsigned width, unsigned height)
+    : Core::App(width, height), m_frame{width, height}
+    {
+        vertexShader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
         glCompileShader(vertexShader);
 
-        GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
         glCompileShader(fragmentShader);
 
-        GLuint shaderProgram = glCreateProgram();
+        shaderProgram = glCreateProgram();
         glAttachShader(shaderProgram, vertexShader);
         glAttachShader(shaderProgram, fragmentShader);
         glLinkProgram(shaderProgram);
         glUseProgram(shaderProgram);
+
+    }
+    ~App()
+    {
+        glDeleteProgram(shaderProgram);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+    }
+
+    void frame() override {
+        glViewport(0, 0, m_width, m_height);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         float vertices[] = {
             -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,  // Red
@@ -93,9 +103,6 @@ public:
 
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
-        glDeleteProgram(shaderProgram);
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
 
         glFinish();
         glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, m_frame.pixels());
@@ -104,6 +111,8 @@ public:
         std::stringstream ss;
         m_frame.braille_to_stream(ss);
         std::puts(ss.str().c_str());
+
+        m_frame.reset();
     }
 };
 

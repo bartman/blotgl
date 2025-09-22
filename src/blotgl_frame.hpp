@@ -36,6 +36,10 @@ public:
         return { rgb[0], rgb[1], rgb[2] };
     }
 
+    void pixel_reset() {
+        std::fill(m_pixels.begin(), m_pixels.end(), 0);
+    }
+
     // braille glyph buffer
 
     Size braille_width() const { return div_round_up(m_width, BlotGL::BRAILLE_GLYPH_COLS); }
@@ -47,12 +51,26 @@ public:
         return braille()[index];
     }
 
+    void braille_reset() {
+        std::fill(m_braille.begin(), m_braille.end(), 0);
+    }
+
     // color buffer (same size as braille character buffer)
 
     color24* colors() { return m_colors.data(); }
     color24& color(Size x, Size y) {
         size_t index = braille_index(x, y);
         return colors()[index];
+    }
+
+    void color_reset() {
+        std::fill(m_colors.begin(), m_colors.end(), color24{});
+    }
+
+    void reset() {
+        pixel_reset();
+        braille_reset();
+        color_reset();
     }
 
     // convert pixel buffer to braille/colors
@@ -81,6 +99,8 @@ public:
     }
 
     std::ostream & braille_to_stream(std::ostream &out) {
+        gen_clear_screen(out);
+        gen_top_left(out);
         for (size_t y=0; y<braille_height(); y++) {
             color24 prev_color{};
             for (size_t x=0; x<braille_width(); x++) {
@@ -156,8 +176,12 @@ protected:
     static constexpr void gen_reset(std::ostream &out) {
         out << "\033[0m";
     }
-
-
+    static constexpr void gen_clear_screen(std::ostream &out) {
+        out << "\033[2J";
+    }
+    static constexpr void gen_top_left(std::ostream &out) {
+        out << "\033[H";
+    }
 };
 
 }

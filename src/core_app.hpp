@@ -143,7 +143,7 @@ public:
         }
     }
 
-    ~App() {
+    virtual ~App() {
         glDeleteRenderbuffers(1, &m_rb);
         glDeleteFramebuffers(1, &m_fbo);
         eglMakeCurrent(m_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -152,6 +152,8 @@ public:
         gbm_device_destroy(m_gbm);
         close(m_fd);
     }
+
+    virtual void frame() = 0;
 
 };
 
