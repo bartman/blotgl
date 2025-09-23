@@ -40,6 +40,7 @@ static void register_sig_handler() {
 
 int main() {
     BlotGL::App app(200, 100);
+    app.prep();
 
     auto last_time = std::chrono::steady_clock::now();
     double target_delta = 1.0 / 120.0;  // Cap at 120 FPS

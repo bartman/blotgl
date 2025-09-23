@@ -26,28 +26,34 @@ class App : public Core::App {
 protected:
     BlotGL::Frame<3> m_frame;
 
-        static constexpr const char *vertexShaderSource = R"glsl(
-            #version 330 core
-            layout (location = 0) in vec2 aPos;
-            layout (location = 1) in vec3 aColor;
-            out vec3 fragColor;
-            void main() {
-                gl_Position = vec4(aPos, 0.0, 1.0);
-                fragColor = aColor;
-            }
-        )glsl";
+    static constexpr const char *vertexShaderSource = R"glsl(
+        #version 330 core
+        layout (location = 0) in vec2 aPos;
+        layout (location = 1) in vec3 aColor;
+        out vec3 fragColor;
+        void main() {
+            gl_Position = vec4(aPos, 0.0, 1.0);
+            fragColor = aColor;
+        }
+    )glsl";
 
-        static constexpr const char *fragmentShaderSource = R"glsl(
-            #version 330 core
-            in vec3 fragColor;
-            out vec4 FragColor;
-            void main() {
-                FragColor = vec4(fragColor, 1.0);
-            }
-        )glsl";
-        GLuint fragmentShader;
-        GLuint vertexShader;
-        GLuint shaderProgram;
+    static constexpr const char *fragmentShaderSource = R"glsl(
+        #version 330 core
+        in vec3 fragColor;
+        out vec4 FragColor;
+        void main() {
+            FragColor = vec4(fragColor, 1.0);
+        }
+    )glsl";
+    GLuint fragmentShader{};
+    GLuint vertexShader{};
+    GLuint shaderProgram{};
+
+    size_t m_color_count{};
+    size_t m_vertex_count{};
+
+    std::vector<float> m_vertices;
+    float m_degrees = 0;
 
 public:
 
@@ -76,28 +82,80 @@ public:
         glDeleteShader(fragmentShader);
     }
 
+    void prep() override {
+        const size_t ccount = 12;
+
+        m_color_count = ccount;
+        float colors[ccount*3] {
+            1.00f, 0.00f, 0.00f, // R
+            0.66f, 0.33f, 0.00f, // ry
+            0.50f, 0.50f, 0.00f, // Y
+            0.33f, 0.66f, 0.00f, // yg
+            0.00f, 1.00f, 0.00f, // G
+            0.00f, 0.66f, 0.33f, // gc
+            0.00f, 0.50f, 0.50f, // C
+            0.00f, 0.33f, 0.66f, // cb
+            0.00f, 0.00f, 1.00f, // B
+            0.33f, 0.00f, 0.66f, // bm
+            0.50f, 0.00f, 0.50f, // M
+            0.66f, 0.00f, 0.33f, // mr
+        };
+
+        m_vertex_count = ccount * 3;
+        m_vertices.resize(m_vertex_count * 5);
+        float *vertices = m_vertices.data();
+
+        for (int c = 0; c < m_color_count; ++c) {
+            int vi = c*15;
+
+            // one
+            int c0 = c * 3;
+            int v0 = c * 15;
+            float r0 = (c * 30) * static_cast<float>(M_PI) / 180.0f;
+            vertices[v0+0] = cosf(r0);// - sinf(r0);
+            vertices[v0+1] = sinf(r0);// + cosf(r0);
+            vertices[v0+2] = colors[c0+0];
+            vertices[v0+3] = colors[c0+1];
+            vertices[v0+4] = colors[c0+2];
+
+            // two
+            int c1 = ((c+1)%m_color_count)*3;
+            int v1 = v0 + 5;
+            float r1 = ((c+1) * 30) * static_cast<float>(M_PI) / 180.0f;
+            vertices[v1+0] = cosf(r1);// - sinf(r1);
+            vertices[v1+1] = sinf(r1);// + cosf(r1);
+            vertices[v1+2] = colors[c1+0];
+            vertices[v1+3] = colors[c1+1];
+            vertices[v1+4] = colors[c1+2];
+
+            // three
+            int v2 = v1 + 5;
+            vertices[v2+0] = 0;
+            vertices[v2+1] = 0;
+            vertices[v2+2] = 1;
+            vertices[v2+3] = 1;
+            vertices[v2+4] = 1;
+
+        }
+    }
+
     void frame() override {
         glViewport(0, 0, m_width, m_height);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        static float degrees = 0;
+        float vertices[m_vertices.size()];
+        memcpy(vertices, m_vertices.data(), sizeof(vertices));
 
-        float vertices[] = {
-            -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,  // Red
-             0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // Green
-             0.0f,  0.5f, 0.0f, 0.0f, 1.0f   // Blue
-        };
-
-        float radians = degrees * static_cast<float>(M_PI) / 180.0f;
-        for (int v = 0; v < 3; ++v) {
+        float radians = m_degrees * static_cast<float>(M_PI) / 180.0f;
+        for (int v = 0; v < m_vertex_count; ++v) {
             int i = 5*v;
             float new_x = vertices[i+0] * cosf(radians) - vertices[i+1] * sinf(radians);
             float new_y = vertices[i+0] * sinf(radians) + vertices[i+1] * cosf(radians);
             vertices[i+0] = new_x;
             vertices[i+1] = new_y;
         }
-        degrees += 1;
+        m_degrees += 1;
 
         GLuint VBO, VAO;
         glGenVertexArrays(1, &VAO);
@@ -112,7 +170,8 @@ public:
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
         glEnableVertexAttribArray(1);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        for (int c = 0; c < m_color_count; ++c)
+            glDrawArrays(GL_TRIANGLES, c*3, 3);
 
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
