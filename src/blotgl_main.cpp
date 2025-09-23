@@ -42,25 +42,29 @@ int main() {
     BlotGL::App app(200, 100);
     app.prep();
 
-    auto last_time = std::chrono::steady_clock::now();
+    auto start_time = std::chrono::steady_clock::now();
+    auto last_time = start_time;
     double target_delta = 1.0 / 120.0;  // Cap at 120 FPS
+    size_t frames = 0;
 
     while (!interrupted) {
         auto frame_start = std::chrono::steady_clock::now();
         app.frame();
         auto frame_end = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration<double>(frame_end - frame_start).count();
+
+        auto delta = std::chrono::duration<double>(frame_end - start_time).count();
+        auto avgsec = frames ? delta / frames : 0.0;
+        auto fps = avgsec ? 1.0 / avgsec : 0.0;
+        fmt::print("FPS: {:.2f}\n", fps);
+
+        auto current_time = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration<double>(current_time - frame_start).count();
         if (elapsed < target_delta) {
             std::this_thread::sleep_for(std::chrono::duration<double>(target_delta - elapsed));
         }
 
-        // FPS calculation (includes sleep for accurate loop rate)
-        auto current_time = std::chrono::steady_clock::now();
-        auto delta = std::chrono::duration<double>(current_time - last_time).count();
-        double fps = (delta > 0.0) ? 1.0 / delta : 0.0;
-        fmt::print("FPS: {:.2f}\n", fps);
-
         last_time = current_time;
+        frames ++;
     }
 
     return 0;
