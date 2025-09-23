@@ -58,9 +58,11 @@ int main() {
         fmt::print("FPS: {:.2f}\n", fps);
 
         auto current_time = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration<double>(current_time - frame_start).count();
-        if (elapsed < target_delta) {
-            std::this_thread::sleep_for(std::chrono::duration<double>(target_delta - elapsed));
+        if (target_delta) {
+            auto elapsed = std::chrono::duration<double>(current_time - frame_start).count();
+            if (elapsed < target_delta) {
+                std::this_thread::sleep_for(std::chrono::duration<double>(target_delta - elapsed));
+            }
         }
 
         last_time = current_time;

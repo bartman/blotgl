@@ -84,6 +84,7 @@ public:
 
     void prep() override {
         const size_t ccount = 12;
+        const double radius = 0.95;
 
         m_color_count = ccount;
         float colors[ccount*3] {
@@ -112,8 +113,8 @@ public:
             int c0 = c * 3;
             int v0 = c * 15;
             float r0 = (c * 30) * static_cast<float>(M_PI) / 180.0f;
-            vertices[v0+0] = cosf(r0);// - sinf(r0);
-            vertices[v0+1] = sinf(r0);// + cosf(r0);
+            vertices[v0+0] = radius * cosf(r0);
+            vertices[v0+1] = radius * sinf(r0);
             vertices[v0+2] = colors[c0+0];
             vertices[v0+3] = colors[c0+1];
             vertices[v0+4] = colors[c0+2];
@@ -122,8 +123,8 @@ public:
             int c1 = ((c+1)%m_color_count)*3;
             int v1 = v0 + 5;
             float r1 = ((c+1) * 30) * static_cast<float>(M_PI) / 180.0f;
-            vertices[v1+0] = cosf(r1);// - sinf(r1);
-            vertices[v1+1] = sinf(r1);// + cosf(r1);
+            vertices[v1+0] = radius * cosf(r1);
+            vertices[v1+1] = radius * sinf(r1);
             vertices[v1+2] = colors[c1+0];
             vertices[v1+3] = colors[c1+1];
             vertices[v1+4] = colors[c1+2];
