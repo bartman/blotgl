@@ -34,6 +34,11 @@
         # Additional for DRM/GBM
         pkgs.libdrm
         pkgs.libgbm
+
+        pkgs.t-rec
+        pkgs.ttygif
+        pkgs.asciinema
+        pkgs.asciinema-agg
       ];
     };
   };
