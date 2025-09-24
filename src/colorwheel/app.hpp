@@ -18,7 +18,8 @@ extern "C" {
 #include <unistd.h>
 };
 
-#include "core_app.hpp"
+#include "blotgl_frame.hpp"
+#include "blotgl_app.hpp"
 
 namespace BlotGL {
 

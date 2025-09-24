@@ -19,8 +19,7 @@ extern "C" {
 #include <signal.h>
 };
 
-#include "blotgl_frame.hpp"
-#include "blotgl_app.hpp"
+#include "app.hpp"
 
 static bool interrupted = false;
 

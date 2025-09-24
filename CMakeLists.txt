@@ -32,6 +32,8 @@ include(CheckLibCppHeaders)
 
 include(SetupDependencies)
 
+set(BLOTGL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/)
+
 # Add the src subdirectory
 add_subdirectory(src)
 
