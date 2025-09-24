@@ -19,11 +19,10 @@ extern "C" {
 };
 
 #include "blotgl_frame.hpp"
+#include "blotgl_shader.hpp"
 #include "blotgl_app.hpp"
 
-namespace BlotGL {
-
-class App : public Core::App {
+class App : public BlotGL::App {
 protected:
     BlotGL::Frame<3> m_frame;
 
@@ -46,9 +45,8 @@ protected:
             FragColor = vec4(fragColor, 1.0);
         }
     )glsl";
-    GLuint fragmentShader{};
-    GLuint vertexShader{};
-    GLuint shaderProgram{};
+
+    BlotGL::Shader m_shader;
 
     size_t m_color_count{};
     size_t m_vertex_count{};
@@ -59,31 +57,17 @@ protected:
 public:
 
     explicit App(unsigned width, unsigned height)
-    : Core::App(width, height), m_frame{width, height}
+    : BlotGL::App(width, height), m_frame{width, height},
+      m_shader(vertexShaderSource, fragmentShaderSource)
     {
-        vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-        glCompileShader(vertexShader);
 
-        fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-        glCompileShader(fragmentShader);
-
-        shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glLinkProgram(shaderProgram);
-        glUseProgram(shaderProgram);
-
+        build_triangles();
     }
     ~App()
     {
-        glDeleteProgram(shaderProgram);
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
     }
 
-    void prep() override {
+    void build_triangles() {
         const size_t ccount = 12;
         const double radius = 0.95;
 
@@ -142,6 +126,8 @@ public:
     }
 
     void frame() override {
+        m_shader.use();
+
         glViewport(0, 0, m_width, m_height);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -189,5 +175,3 @@ public:
         m_frame.reset();
     }
 };
-
-}

@@ -38,8 +38,7 @@ static void register_sig_handler() {
 }
 
 int main() {
-    BlotGL::App app(200, 100);
-    app.prep();
+    App app(200, 100);
 
     auto start_time = std::chrono::steady_clock::now();
     auto last_time = start_time;

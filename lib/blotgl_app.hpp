@@ -18,7 +18,7 @@ extern "C" {
 #include <unistd.h>
 };
 
-namespace Core {
+namespace BlotGL {
 
 class App {
 protected:
@@ -153,7 +153,6 @@ public:
         close(m_fd);
     }
 
-    virtual void prep() = 0;
     virtual void frame() = 0;
 
 };
