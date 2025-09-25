@@ -22,10 +22,8 @@ extern "C" {
 #include "blotgl_shader.hpp"
 #include "blotgl_app.hpp"
 
-class App : public BlotGL::App {
+class AppLayer : public BlotGL::Layer {
 protected:
-    BlotGL::Frame<3> m_frame;
-
     static constexpr const char *vertexShaderSource = R"glsl(
         #version 330 core
         layout (location = 0) in vec2 aPos;
@@ -56,14 +54,12 @@ protected:
 
 public:
 
-    explicit App(unsigned width, unsigned height)
-    : BlotGL::App(width, height), m_frame{width, height},
-      m_shader(vertexShaderSource, fragmentShaderSource)
+    explicit AppLayer()
+    : BlotGL::Layer(), m_shader(vertexShaderSource, fragmentShaderSource)
     {
-
         build_triangles();
     }
-    ~App()
+    ~AppLayer()
     {
     }
 
@@ -125,12 +121,9 @@ public:
         }
     }
 
-    void frame() override {
+    void on_update(float timestamp) override
+    {
         m_shader.use();
-
-        glViewport(0, 0, m_width, m_height);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
 
         float vertices[m_vertices.size()];
         memcpy(vertices, m_vertices.data(), sizeof(vertices));
@@ -163,15 +156,5 @@ public:
 
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
-
-        glFinish();
-        glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, m_frame.pixels());
-
-        m_frame.pixels_to_braille();
-        std::stringstream ss;
-        m_frame.braille_to_stream(ss);
-        std::puts(ss.str().c_str());
-
-        m_frame.reset();
     }
 };

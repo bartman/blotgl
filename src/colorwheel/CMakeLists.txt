@@ -13,6 +13,7 @@ TARGET_INCLUDE_DIRECTORIES(colorwheel PRIVATE
 )
 
 TARGET_LINK_LIBRARIES(colorwheel PRIVATE
+    blotgl_a
     -lm
     #spdlog::spdlog
     fmt::fmt
