@@ -90,7 +90,7 @@ public:
         GL(glUniform1f(0, timestamp));
 
         const auto &[width,height] = app.get_dimensions();
-        GL(glUniform2f(1, width, height));
+        GL(glUniform2f(1, float(width), float(height)));
 
         // Render
         GL(glBindVertexArray(m_vertex_array));
