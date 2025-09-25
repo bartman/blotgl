@@ -44,6 +44,23 @@ protected:
         }
     }
 
+    static void check_program_status(GLuint part, GLuint stage, const char *desc)
+    {
+        GLint status = 0;
+        glGetProgramiv(part, stage, &status);
+        if (status == GL_FALSE) {
+            GLint log_length = 0;
+            glGetProgramiv(part, GL_INFO_LOG_LENGTH, &log_length);
+            if (log_length > 0) {
+                std::string log;
+                log.resize(log_length);
+                glGetShaderInfoLog(part, log_length, NULL, log.data());
+                throw std::runtime_error(
+                    std::format("{} Error:\n{}", desc, log));
+            }
+        }
+    }
+
 
 public:
     explicit Shader(const char *vertex_shader_source,
@@ -65,7 +82,7 @@ public:
         GL(glAttachShader(m_shader_program, m_fragment_shader));
         GL(glLinkProgram(m_shader_program));
 
-        check_shader_status(m_fragment_shader, GL_LINK_STATUS, "Shader Program Link");
+        check_program_status(m_shader_program, GL_LINK_STATUS, "Shader Program Link");
     }
 
     ~Shader() {
@@ -76,7 +93,7 @@ public:
 
     void use() {
         if (m_check_status) {
-            check_shader_status(m_fragment_shader, GL_VALIDATE_STATUS, "Shader Program Validation");
+            check_program_status(m_shader_program, GL_VALIDATE_STATUS, "Shader Program Validation");
             m_check_status = false;
         }
         GL(glUseProgram(m_shader_program));
