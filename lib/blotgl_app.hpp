@@ -62,7 +62,7 @@ protected:
     static void sig_handler(int signo);
 
 public:
-    explicit App(unsigned width, unsigned height);
+    explicit App();
     ~App();
 
     std::pair<float,float> get_dimensions() const;

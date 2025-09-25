@@ -1,6 +1,8 @@
 #define GL_GLEXT_PROTOTYPES
 #include "blotgl_app.hpp"
 #include "blotgl_frame.hpp"
+#include "blotgl_terminal.hpp"
+#include "blotgl_braille.hpp"
 
 #include <chrono>
 #include <thread>
@@ -13,8 +15,12 @@ extern "C" {
 
 namespace BlotGL {
 
-App::App(unsigned width, unsigned height)
-    : m_width{width}, m_height{height} {
+App::App()
+{
+    auto ws = linux_terminal_winsize();
+    m_width = std::max(size_t(200), (ws.ws_col-1) * BRAILLE_GLYPH_COLS);
+    m_height = std::max(size_t(200), (ws.ws_row-1) * BRAILLE_GLYPH_ROWS);
+
     m_fd = open("/dev/dri/renderD128", O_RDWR);
     if (m_fd < 0) {
         fprintf(stderr, "Failed to open render node (check permissions)\n");

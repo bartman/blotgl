@@ -9,6 +9,7 @@
 #include "blotgl_braille.hpp"
 #include "blotgl_utils.hpp"
 #include "blotgl_color.hpp"
+#include "blotgl_terminal.hpp"
 
 namespace BlotGL {
 
@@ -180,13 +181,13 @@ protected:
         out << std::format("\033[38;2;{};{};{}m", color.r, color.g, color.b);
     };
     static constexpr void gen_reset(std::ostream &out) {
-        out << "\033[0m";
+        out << TERM_COLOR_RESET;
     }
     static constexpr void gen_clear_screen(std::ostream &out) {
-        out << "\033[2J";
+        out << TERM_CLEAR_SCREEN;
     }
     static constexpr void gen_top_left(std::ostream &out) {
-        out << "\033[H";
+        out << TERM_GOTO_TOP_LEFT;
     }
 };
 

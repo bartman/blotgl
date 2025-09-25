@@ -9,7 +9,7 @@
 #include "app.hpp"
 
 int main() {
-    BlotGL::App app(200, 100);
+    BlotGL::App app;
 
     app.push<AppLayer>();
 
