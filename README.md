@@ -7,18 +7,20 @@ I was inspired by [The Cherno](https://github.com/TheCherno)'s [C++ Application 
 # build
 
 ## Debian/Ubuntu
-```
+```sh
 ./dependencies.sh
 make
 ```
 
 ## NixOS
-```
+```sh
 nix develop
 make
 ```
 
 # examples
+
+NOTE: when ran in kitty, they don't flicker, and render at 120 FPS.  If anything, I don't know how to make a GIF.
 
 ![blot bar --read](gifs/colorwheel.gif)
 
