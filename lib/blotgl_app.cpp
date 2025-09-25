@@ -3,6 +3,7 @@
 #include "blotgl_frame.hpp"
 #include "blotgl_terminal.hpp"
 #include "blotgl_braille.hpp"
+#include "blotgl_glerror.hpp"
 
 #include <chrono>
 #include <thread>
@@ -183,6 +184,8 @@ int App::run()
         if (g_interrupted)
             return 1;
 
+        blotgl_drain_glerrors();
+
         auto current_time = std::chrono::steady_clock::now();
         if (target_delta) {
             auto elapsed = std::chrono::duration<double>(current_time - frame_start).count();
@@ -200,9 +203,9 @@ int App::run()
 
 void App::step(float timestamp)
 {
-    glViewport(0, 0, m_width, m_height);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    GLP(glViewport(0, 0, m_width, m_height));
+    GLP(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
+    GLP(glClear(GL_COLOR_BUFFER_BIT));
 
     Frame<3> frame(m_width, m_height);
 
@@ -212,8 +215,8 @@ void App::step(float timestamp)
     for (const auto &layer : m_layers)
         layer->on_render();
 
-    glFinish();
-    glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, frame.pixels());
+    GLP(glFinish());
+    GLP(glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, frame.pixels()));
 
     frame.pixels_to_braille(true);
     std::stringstream ss;

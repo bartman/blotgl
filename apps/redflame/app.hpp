@@ -24,6 +24,7 @@ extern "C" {
 #include "blotgl_shader.hpp"
 #include "blotgl_app.hpp"
 #include "blotgl_mmapped_file.hpp"
+#include "blotgl_glerror.hpp"
 
 class AppLayer : public BlotGL::Layer {
 protected:
@@ -43,8 +44,8 @@ public:
         m_shader(m_vertex_shader_source.str().c_str(), m_fragment_shader_source.str().c_str())
     {
         // Create geometry
-        glCreateVertexArrays(1, &m_vertex_array);
-        glCreateBuffers(1, &m_vertex_buffer);
+        GL(glCreateVertexArrays(1, &m_vertex_array));
+        GL(glCreateBuffers(1, &m_vertex_buffer));
 
         struct Vertex
         {
@@ -58,27 +59,27 @@ public:
             { {-1.0f,  3.0f }, { 0.0f, 2.0f } }   // Top-left
         };
 
-        glNamedBufferData(m_vertex_buffer, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        GL(glNamedBufferData(m_vertex_buffer, sizeof(vertices), vertices, GL_STATIC_DRAW));
 
         // Bind the VBO to VAO at binding index 0
-        glVertexArrayVertexBuffer(m_vertex_array, 0, m_vertex_buffer, 0, sizeof(Vertex));
+        GL(glVertexArrayVertexBuffer(m_vertex_array, 0, m_vertex_buffer, 0, sizeof(Vertex)));
 
         // Enable attributes
-        glEnableVertexArrayAttrib(m_vertex_array, 0); // position
-        glEnableVertexArrayAttrib(m_vertex_array, 1); // uv
+        GL(glEnableVertexArrayAttrib(m_vertex_array, 0)); // position
+        GL(glEnableVertexArrayAttrib(m_vertex_array, 1)); // uv
 
         // Format: location, size, type, normalized, relative offset
-        glVertexArrayAttribFormat(m_vertex_array, 0, 2, GL_FLOAT, GL_FALSE, static_cast<GLuint>(offsetof(Vertex, Position)));
-        glVertexArrayAttribFormat(m_vertex_array, 1, 2, GL_FLOAT, GL_FALSE, static_cast<GLuint>(offsetof(Vertex, TexCoord)));
+        GL(glVertexArrayAttribFormat(m_vertex_array, 0, 2, GL_FLOAT, GL_FALSE, static_cast<GLuint>(offsetof(Vertex, Position))));
+        GL(glVertexArrayAttribFormat(m_vertex_array, 1, 2, GL_FLOAT, GL_FALSE, static_cast<GLuint>(offsetof(Vertex, TexCoord))));
 
         // Link attribute locations to binding index 0
-        glVertexArrayAttribBinding(m_vertex_array, 0, 0);
-        glVertexArrayAttribBinding(m_vertex_array, 1, 0);
+        GL(glVertexArrayAttribBinding(m_vertex_array, 0, 0));
+        GL(glVertexArrayAttribBinding(m_vertex_array, 1, 0));
     }
     ~AppLayer()
     {
-        glDeleteVertexArrays(1, &m_vertex_array);
-        glDeleteBuffers(1, &m_vertex_buffer);
+        GL(glDeleteVertexArrays(1, &m_vertex_array));
+        GL(glDeleteBuffers(1, &m_vertex_buffer));
     }
 
     void on_update(const BlotGL::App &app, float timestamp) override
@@ -86,14 +87,14 @@ public:
         m_shader.use();
 
         // Uniforms
-        glUniform1f(0, timestamp);
+        GLP(glUniform1f(0, timestamp));
 
         const auto &[width,height] = app.get_dimensions();
-        glUniform2f(1, width, height);
+        GLP(glUniform2f(1, width, height));
 
         // Render
-        glBindVertexArray(m_vertex_array);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        GLP(glBindVertexArray(m_vertex_array));
+        GLP(glDrawArrays(GL_TRIANGLES, 0, 3));
 
     }
 };

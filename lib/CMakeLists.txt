@@ -1,5 +1,6 @@
 SET(BLOTGL_SRCS
     blotgl_app.cpp
+    blotgl_glerror.cpp
 )
 
 # build a libblotgl.so and a libblotgl.a
