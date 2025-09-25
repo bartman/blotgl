@@ -1,3 +1,4 @@
+#include <iostream>
 #define GL_GLEXT_PROTOTYPES
 #include "blotgl_app.hpp"
 #include "blotgl_frame.hpp"
@@ -219,7 +220,8 @@ int App::run()
         auto delta = std::chrono::duration<double>(frame_end - start_time).count();
         auto avgsec = frames ? delta / frames : 0.0;
         auto fps = avgsec ? 1.0 / avgsec : 0.0;
-        fmt::print("{}x{} FPS: {:.2f}\n", m_width, m_height, fps);
+        fmt::print("{}x{} FPS: {:.2f}\r", m_width, m_height, fps);
+        std::flush(std::cout);
 
         if (g_interrupted)
             return 1;

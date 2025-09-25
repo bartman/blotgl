@@ -18,7 +18,6 @@ extern "C" {
 #include <unistd.h>
 };
 
-#include "blotgl_frame.hpp"
 #include "blotgl_shader.hpp"
 #include "blotgl_app.hpp"
 #include "blotgl_glerror.hpp"
@@ -69,7 +68,7 @@ public:
         const double radius = 0.95;
 
         m_color_count = ccount;
-        float colors[ccount*3] {
+        const float colors[ccount*3] {
             1.00f, 0.00f, 0.00f, // R
             0.66f, 0.33f, 0.00f, // ry
             0.50f, 0.50f, 0.00f, // Y
