@@ -11,7 +11,6 @@ extern "C" {
 #include <signal.h>
 };
 
-
 namespace BlotGL {
 
 App::App(unsigned width, unsigned height)
@@ -130,6 +129,11 @@ App::~App() {
     close(m_fd);
 }
 
+std::pair<float,float> App::get_dimensions() const
+{
+    return { m_width, m_height };
+}
+
 // TODO: should do proper event handling
 
 bool App::g_registered_sig_handler = false;
@@ -197,7 +201,7 @@ void App::step(float timestamp)
     Frame<3> frame(m_width, m_height);
 
     for (const auto &layer : m_layers)
-        layer->on_update(timestamp);
+        layer->on_update(*this, timestamp);
 
     for (const auto &layer : m_layers)
         layer->on_render();
@@ -205,7 +209,7 @@ void App::step(float timestamp)
     glFinish();
     glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, frame.pixels());
 
-    frame.pixels_to_braille();
+    frame.pixels_to_braille(true);
     std::stringstream ss;
     frame.braille_to_stream(ss);
     std::puts(ss.str().c_str());

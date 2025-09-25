@@ -80,10 +80,10 @@ public:
     }
 
     // convert pixel buffer to braille/colors
-    void pixels_to_braille() {
-        for (size_t y=0; y<pixel_height(); y++) {
-            for (size_t x=0; x<pixel_width(); x++) {
-                color24 pix = pixel_color(x,y);
+    void pixels_to_braille(bool invert_y_axis) {
+        for (size_t y=0; y<m_height; y++) {
+            for (size_t x=0; x<m_width; x++) {
+                color24 pix = invert_y_axis ? pixel_color(x,m_height-y-1) : pixel_color(x,y);
                 if (!pix)
                     continue;
 
@@ -143,9 +143,9 @@ protected:
         return width * height * BPP;
     }
     constexpr size_t pixel_index(size_t x, size_t y) {
-        assert (x < pixel_width());
-        assert (y < pixel_height());
-        return x + (y * pixel_width());
+        assert (x < m_width);
+        assert (y < m_height);
+        return x + (y * m_width);
     }
     constexpr size_t braille_index(size_t x, size_t y) {
         assert (x < braille_width());

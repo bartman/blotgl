@@ -22,6 +22,7 @@ endfunction()
 my_find_package(GTest GTest::gtest)
 my_find_package(EGL EGL::EGL)
 my_find_package(GBM GBM::GBM)
+my_find_package(glm glm::glm)
 my_find_package(OpenGL OpenGL::GL)
 find_package(Threads REQUIRED)
 

@@ -24,12 +24,14 @@ struct Event {
     // TODO
 };
 
+class App;
+
 class Layer {
 public:
     explicit Layer() = default;
     virtual ~Layer() = default;
     virtual void on_event(Event &event) {}
-    virtual void on_update(float timestamp) {}
+    virtual void on_update(const BlotGL::App &app, float timestamp) {}
     virtual void on_render() {}
 };
 
@@ -62,6 +64,8 @@ protected:
 public:
     explicit App(unsigned width, unsigned height);
     ~App();
+
+    std::pair<float,float> get_dimensions() const;
 
     int run();
     void stop();

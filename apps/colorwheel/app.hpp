@@ -121,7 +121,7 @@ public:
         }
     }
 
-    void on_update(float timestamp) override
+    void on_update(const BlotGL::App &app, float timestamp) override
     {
         m_shader.use();
 
