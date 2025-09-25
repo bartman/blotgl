@@ -13,7 +13,10 @@
 
 namespace BlotGL {
 
-template <size_t BPP = 3>
+template <
+size_t BPP = 3, // input pixel size, only 3 bit-per-pixel is supported right now
+bool AVGPXL = true  // enable averaging of pixel colors into final braille color
+>
 class Frame final {
 public:
     using Size = uint32_t;
@@ -22,10 +25,7 @@ public:
     : m_width(width), m_height(height),
       m_pixels(pixel_size() * BPP, 0),
       m_braille(braille_size(), 0),
-      m_colors(braille_size(), color24{})
-    {
-        static_assert(BPP == 3); // only this is supported for now
-    }
+      m_colors(braille_size(), color24{}) { }
     ~Frame() = default;
 
     // RGB pixel buffer
@@ -39,6 +39,7 @@ public:
         return pixels() + (index * BPP);
     }
     color24 pixel_color(Size x, Size y) {
+        static_assert(BPP == 3); // only this is supported for now
         const uint8_t *rgb = pixel_ptr(x, y);
         return { rgb[0], rgb[1], rgb[2] };
     }
@@ -136,9 +137,9 @@ public:
 protected:
     const Size m_width;
     const Size m_height;
-    std::vector<uint8_t> m_pixels;
-    std::vector<uint8_t> m_braille;
-    std::vector<color24> m_colors;
+    std::vector<uint8_t> m_pixels;   // input from OpenGL, 24 bits per viewport pixel
+    std::vector<uint8_t> m_braille;  // output braille codepoint for each character (8 pixels)
+    std::vector<color24> m_colors;   // output braille color for each character (8 pixels)
 
     static constexpr size_t buffer_size(size_t width, size_t height) {
         return width * height * BPP;
