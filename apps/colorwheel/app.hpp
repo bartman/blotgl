@@ -140,22 +140,22 @@ public:
         m_degrees += 1;
 
         GLuint VBO, VAO;
-        GLP(glGenVertexArrays(1, &VAO));
-        GLP(glGenBuffers(1, &VBO));
+        GL(glGenVertexArrays(1, &VAO));
+        GL(glGenBuffers(1, &VBO));
 
-        GLP(glBindVertexArray(VAO));
-        GLP(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        GLP(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
+        GL(glBindVertexArray(VAO));
+        GL(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+        GL(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
 
-        GLP(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0));
-        GLP(glEnableVertexAttribArray(0));
-        GLP(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float))));
-        GLP(glEnableVertexAttribArray(1));
+        GL(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0));
+        GL(glEnableVertexAttribArray(0));
+        GL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float))));
+        GL(glEnableVertexAttribArray(1));
 
         for (int c = 0; c < m_color_count; ++c)
-            GLP(glDrawArrays(GL_TRIANGLES, c*3, 3));
+            GL(glDrawArrays(GL_TRIANGLES, c*3, 3));
 
-        GLP(glDeleteVertexArrays(1, &VAO));
-        GLP(glDeleteBuffers(1, &VBO));
+        GL(glDeleteVertexArrays(1, &VAO));
+        GL(glDeleteBuffers(1, &VBO));
     }
 };

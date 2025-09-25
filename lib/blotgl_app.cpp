@@ -170,6 +170,9 @@ int App::run()
 
     m_running = true;
 
+    if (blotgl_drain_glerrors())
+        return 1;
+
     while (m_running) {
         auto frame_start = std::chrono::steady_clock::now();
         auto timestamp = std::chrono::duration<double>(frame_start - start_time).count();
@@ -184,7 +187,8 @@ int App::run()
         if (g_interrupted)
             return 1;
 
-        blotgl_drain_glerrors();
+        if (blotgl_drain_glerrors())
+            return 1;
 
         auto current_time = std::chrono::steady_clock::now();
         if (target_delta) {
@@ -203,9 +207,9 @@ int App::run()
 
 void App::step(float timestamp)
 {
-    GLP(glViewport(0, 0, m_width, m_height));
-    GLP(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
-    GLP(glClear(GL_COLOR_BUFFER_BIT));
+    GL(glViewport(0, 0, m_width, m_height));
+    GL(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
+    GL(glClear(GL_COLOR_BUFFER_BIT));
 
     Frame<3> frame(m_width, m_height);
 
@@ -215,8 +219,8 @@ void App::step(float timestamp)
     for (const auto &layer : m_layers)
         layer->on_render();
 
-    GLP(glFinish());
-    GLP(glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, frame.pixels()));
+    GL(glFinish());
+    GL(glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, frame.pixels()));
 
     frame.pixels_to_braille(true);
     std::stringstream ss;

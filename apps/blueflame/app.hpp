@@ -87,14 +87,14 @@ public:
         m_shader.use();
 
         // Uniforms
-        GLP(glUniform1f(0, timestamp));
+        GL(glUniform1f(0, timestamp));
 
         const auto &[width,height] = app.get_dimensions();
-        GLP(glUniform2f(1, width, height));
+        GL(glUniform2f(1, width, height));
 
         // Render
-        GLP(glBindVertexArray(m_vertex_array));
-        GLP(glDrawArrays(GL_TRIANGLES, 0, 3));
+        GL(glBindVertexArray(m_vertex_array));
+        GL(glDrawArrays(GL_TRIANGLES, 0, 3));
 
     }
 };
