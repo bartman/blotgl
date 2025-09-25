@@ -109,13 +109,13 @@ App::App()
         throw std::runtime_error("eglMakeCurrent failed");
     }
 
-    glGenFramebuffers(1, &m_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    GL(glGenFramebuffers(1, &m_fbo));
+    GL(glBindFramebuffer(GL_FRAMEBUFFER, m_fbo));
 
-    glGenRenderbuffers(1, &m_rb);
-    glBindRenderbuffer(GL_RENDERBUFFER, m_rb);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, m_width, m_height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_rb);
+    GL(glGenRenderbuffers(1, &m_rb));
+    GL(glBindRenderbuffer(GL_RENDERBUFFER, m_rb));
+    GL(glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, m_width, m_height));
+    GL(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_rb));
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         fprintf(stderr, "Framebuffer incomplete\n");
@@ -127,6 +127,17 @@ App::App()
         gbm_device_destroy(m_gbm);
         close(m_fd);
         throw std::runtime_error("Framebuffer incomplete");
+    }
+
+    if (blotgl_drain_glerrors()) {
+        glDeleteRenderbuffers(1, &m_rb);
+        glDeleteFramebuffers(1, &m_fbo);
+        eglMakeCurrent(m_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroyContext(m_dpy, m_ctx);
+        eglTerminate(m_dpy);
+        gbm_device_destroy(m_gbm);
+        close(m_fd);
+        throw std::runtime_error("OpenGL errors during init");
     }
 }
 
