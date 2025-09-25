@@ -1,3 +1,5 @@
+#version 460 core
+
 // https://www.shadertoy.com/view/MtcGD7
 
 layout(location = 0) out vec4 fragColor;
