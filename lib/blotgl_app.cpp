@@ -18,15 +18,7 @@ namespace BlotGL {
 
 App::App()
 {
-    try {
-        auto ws = linux_terminal_winsize();
-        m_width = (ws.ws_col-1) * BRAILLE_GLYPH_COLS;
-        m_height = (ws.ws_row-1) * BRAILLE_GLYPH_ROWS;
-    } catch (std::exception ex) {}
-
-    // smallest size is 200x100, and must be multiple of braille size
-    m_width = std::max(200u, multiple_of<unsigned>(m_width, BRAILLE_GLYPH_COLS));
-    m_height = std::max(100u, multiple_of<unsigned>(m_height, BRAILLE_GLYPH_ROWS));
+    update_dimensions();
 
     m_fd = open("/dev/dri/renderD128", O_RDWR);
     if (m_fd < 0) {
@@ -153,6 +145,34 @@ App::~App() {
     close(m_fd);
 }
 
+bool App::update_dimensions()
+{
+    unsigned cols, rows;
+    try {
+        auto ws = linux_terminal_winsize();
+        cols = (ws.ws_col-1) * BRAILLE_GLYPH_COLS;
+        rows = (ws.ws_row-1) * BRAILLE_GLYPH_ROWS;
+    } catch (std::exception ex) {}
+
+    // smallest size is 200x100, and must be multiple of braille size
+    cols = std::max(200u, multiple_of<unsigned>(cols, BRAILLE_GLYPH_COLS));
+    rows = std::max(100u, multiple_of<unsigned>(rows, BRAILLE_GLYPH_ROWS));
+
+    if (cols == m_width && rows == m_height)
+        return false;
+
+    glDeleteRenderbuffers(1, &m_rb);
+
+    GL(glGenRenderbuffers(1, &m_rb));
+    GL(glBindRenderbuffer(GL_RENDERBUFFER, m_rb));
+    GL(glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, m_width, m_height));
+    GL(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_rb));
+
+    m_width = cols;
+    m_height = rows;
+    return true;
+}
+
 std::pair<float,float> App::get_dimensions() const
 {
     return { m_width, m_height };
@@ -224,6 +244,8 @@ int App::run()
 
 void App::step(float timestamp)
 {
+    update_dimensions();
+
     GL(glViewport(0, 0, m_width, m_height));
     GL(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
     GL(glClear(GL_COLOR_BUFFER_BIT));

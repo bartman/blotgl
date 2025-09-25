@@ -65,6 +65,7 @@ public:
     explicit App();
     ~App();
 
+    bool update_dimensions();
     std::pair<float,float> get_dimensions() const;
 
     int run();
