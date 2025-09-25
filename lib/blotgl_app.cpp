@@ -18,9 +18,13 @@ namespace BlotGL {
 
 App::App()
 {
-    auto ws = linux_terminal_winsize();
-    m_width = std::max(size_t(200), (ws.ws_col-1) * BRAILLE_GLYPH_COLS);
-    m_height = std::max(size_t(200), (ws.ws_row-1) * BRAILLE_GLYPH_ROWS);
+    try {
+        auto ws = linux_terminal_winsize();
+        m_width = (ws.ws_col-1) * BRAILLE_GLYPH_COLS;
+        m_height = (ws.ws_row-1) * BRAILLE_GLYPH_ROWS;
+    } catch (std::exception ex) {}
+    m_width = std::max(200u, m_width);
+    m_height = std::max(100u, m_height);
 
     m_fd = open("/dev/dri/renderD128", O_RDWR);
     if (m_fd < 0) {

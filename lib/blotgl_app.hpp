@@ -37,8 +37,8 @@ public:
 
 class App final {
 protected:
-    unsigned m_width;
-    unsigned m_height;
+    unsigned m_width{};
+    unsigned m_height{};
     int m_fd{-1};
     struct gbm_device *m_gbm{nullptr};
     EGLDisplay m_dpy{EGL_NO_DISPLAY};

@@ -41,8 +41,6 @@ protected:
                 throw std::runtime_error(
                     std::format("{} Error:\n{}", desc, log));
             }
-            throw std::runtime_error(
-                std::format("{} Error!", desc));
         }
     }
 
