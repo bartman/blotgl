@@ -23,8 +23,10 @@ App::App()
         m_width = (ws.ws_col-1) * BRAILLE_GLYPH_COLS;
         m_height = (ws.ws_row-1) * BRAILLE_GLYPH_ROWS;
     } catch (std::exception ex) {}
-    m_width = std::max(200u, m_width);
-    m_height = std::max(100u, m_height);
+
+    // smallest size is 200x100, and must be multiple of braille size
+    m_width = std::max(200u, multiple_of<unsigned>(m_width, BRAILLE_GLYPH_COLS));
+    m_height = std::max(100u, multiple_of<unsigned>(m_height, BRAILLE_GLYPH_ROWS));
 
     m_fd = open("/dev/dri/renderD128", O_RDWR);
     if (m_fd < 0) {
@@ -197,7 +199,7 @@ int App::run()
         auto delta = std::chrono::duration<double>(frame_end - start_time).count();
         auto avgsec = frames ? delta / frames : 0.0;
         auto fps = avgsec ? 1.0 / avgsec : 0.0;
-        fmt::print("FPS: {:.2f}\n", fps);
+        fmt::print("{}x{} FPS: {:.2f}\n", m_width, m_height, fps);
 
         if (g_interrupted)
             return 1;
